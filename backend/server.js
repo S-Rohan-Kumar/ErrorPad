@@ -5,19 +5,16 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import 'dotenv/config';
 
-// Import your model - Ensure your usermodel.js uses 'export default'
 import User from './model/usermodel.js';
 
 const app = express();
 const port = process.env.PORT || 8000;
 
-// Create HTTP server to handle both Express and WebSockets
 const httpServer = createServer(app);
 
-// Initialize Socket.io with CORS
 const io = new Server(httpServer, {
     cors: {
-        origin: "*", // Adjust this to your frontend URL in production
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });
@@ -25,7 +22,6 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
-// Database Connection
 mongoose.connect(process.env.mongodburl)
     .then(() => console.log("Connected to MongoDB"))
     .catch((err) => console.error("MongoDB connection error:", err));
@@ -34,21 +30,16 @@ mongoose.connect(process.env.mongodburl)
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // When a user opens a specific URL/path
     socket.on('join-room', (roomName) => {
         socket.join(roomName);
         console.log(`User joined room: ${roomName}`);
     });
 
-    // Handle real-time typing updates
     socket.on('update-content', async (data) => {
         const { roomName, usercontext } = data;
 
-        // Broadcast to everyone in the room EXCEPT the sender
         socket.to(roomName).emit('receive-content', usercontext);
 
-        // PERSISTENCE: Save to DB
-        // Note: The frontend should debounce this call to avoid hitting Mongo 60 times a second
         try {
             await User.findOneAndUpdate(
                 { userquery: roomName },
@@ -78,8 +69,6 @@ app.get('/:userquery', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-// Post route kept for fallback/legacy support
 app.post('/:userquery', async (req, res) => {
     const userquery = req.params.userquery;
     const { usercontext } = req.body;
