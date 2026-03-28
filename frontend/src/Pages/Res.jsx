@@ -11,7 +11,6 @@ const Res = () => {
   const [restext, setRestext] = useState("");
   const isInitialMount = useRef(true);
 
-  // STEP 1: Initial Load & Socket Setup
   useEffect(() => {
     const fetchText = async () => {
       try {
@@ -23,9 +22,8 @@ const Res = () => {
     };
 
     fetchText();
-    socket.emit("join-room", query); // Tell server which room to join
+    socket.emit("join-room", query); 
 
-    // Listen for updates from OTHER users
     socket.on("receive-content", (newText) => {
       setRestext(newText);
     });
@@ -33,9 +31,7 @@ const Res = () => {
     return () => socket.off("receive-content");
   }, [query]);
 
-  // STEP 2: The Auto-Save (Debounce) Logic
   useEffect(() => {
-    // Avoid saving immediately when the page first loads the data
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
@@ -43,14 +39,13 @@ const Res = () => {
 
 
     const delayTimer = setTimeout(() => {
-      // This is what actually triggers the DB change on the server
       socket.emit("update-content", { 
         roomName: query, 
         usercontext: restext 
       });
-    }, 1000); // 1 second delay
+    }, 1000); 
 
-    return () => clearTimeout(delayTimer); // Reset timer if user types again
+    return () => clearTimeout(delayTimer); 
   }, [restext, query]);
 
   return (
